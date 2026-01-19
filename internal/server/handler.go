@@ -68,6 +68,16 @@ func (h *Handler) HandleStatus(w http.ResponseWriter, r *http.Request) {
 
 // HandleHealth retorna status de saúde do serviço
 func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
+	// CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	response := map[string]interface{}{
 		"status":    "healthy",
 		"timestamp": time.Now().Format(time.RFC3339),
@@ -79,6 +89,16 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 
 // HandlePeers retorna lista de peers Tailscale
 func (h *Handler) HandlePeers(w http.ResponseWriter, r *http.Request) {
+	// CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	// Verifica se a requisição vem da rede Tailscale
 	remoteIP := getRemoteIP(r)
 	if !tailscale.IsTailscaleIP(remoteIP) {
@@ -104,6 +124,16 @@ func (h *Handler) HandlePeers(w http.ResponseWriter, r *http.Request) {
 
 // HandleHistory retorna histórico de métricas
 func (h *Handler) HandleHistory(w http.ResponseWriter, r *http.Request) {
+	// CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	// Verifica se a requisição vem da rede Tailscale
 	remoteIP := getRemoteIP(r)
 	if !tailscale.IsTailscaleIP(remoteIP) {
