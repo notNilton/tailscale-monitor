@@ -22,8 +22,8 @@ FROM alpine:latest
 
 WORKDIR /app
 
-# Instala dependências runtime
-RUN apk add --no-cache ca-certificates sqlite-libs
+# Instala dependências runtime e Tailscale
+RUN apk add --no-cache ca-certificates sqlite-libs tailscale
 
 # Copia binários do builder
 COPY --from=builder /build/agent /app/agent

@@ -8,3 +8,10 @@ storage:
 
 metrics:
   collection_interval: 30s
+
+tailscale:
+  # Obtenha sua API key em: https://login.tailscale.com/admin/settings/keys
+  api_key: "" # ou use variável de ambiente TAILSCALE_API_KEY
+  # Seu tailnet (ex: example.com ou example.ts.net)
+  tailnet: "" # ou use variável de ambiente TAILSCALE_TAILNET
+  use_cli: false # true para usar CLI, false para usar API

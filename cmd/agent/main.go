@@ -55,11 +55,18 @@ func main() {
 	go periodicCleanup(store, cfg.Storage.RetentionDays)
 
 	// Configura HTTP server
-	handler := server.NewHandler(collector, store)
+	handler := server.NewHandler(collector, store, cfg)
 	mux := http.NewServeMux()
+
+	// API endpoints
 	mux.HandleFunc("/status", handler.HandleStatus)
 	mux.HandleFunc("/health", handler.HandleHealth)
+	mux.HandleFunc("/api/peers", handler.HandlePeers)
 	mux.HandleFunc("/metrics/history", handler.HandleHistory)
+
+	// Web dashboard
+	mux.Handle("/", http.RedirectHandler("/static/", http.StatusMovedPermanently))
+	mux.Handle("/static/", http.StripPrefix("/static", server.ServeStatic()))
 
 	// Determina endereço de bind
 	var addr string

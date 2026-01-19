@@ -11,3 +11,7 @@ services:
     restart: unless-stopped
     environment:
       - TZ=America/Sao_Paulo
+      # Configure suas credenciais Tailscale:
+      # Obtenha API key em: https://login.tailscale.com/admin/settings/keys
+      - TAILSCALE_API_KEY=${TAILSCALE_API_KEY:-}
+      - TAILSCALE_TAILNET=${TAILSCALE_TAILNET:-}

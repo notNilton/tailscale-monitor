@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailscale Network Monitor</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🌐 Tailscale Network Monitor</h1>
+            <div class="header-controls">
+                <button id="refreshBtn" class="btn btn-primary">
+                    <span class="icon">🔄</span> Refresh
+                </button>
+                <select id="periodSelect" class="select">
+                    <option value="1">Last 1 hour</option>
+                    <option value="6">Last 6 hours</option>
+                    <option value="24" selected>Last 24 hours</option>
+                    <option value="168">Last 7 days</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Devices</h2>
+                    <span id="deviceCount" class="badge">0</span>
+                </div>
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search devices...">
+                <div id="deviceList" class="device-list">
+                    <div class="loading">Loading devices...</div>
+                </div>
+            </aside>
+
+            <!-- Main Panel -->
+            <main class="main-panel">
+                <div id="welcomeScreen" class="welcome-screen">
+                    <div class="welcome-icon">📊</div>
+                    <h2>Welcome to Tailscale Network Monitor</h2>
+                    <p>Select a device from the sidebar to view its metrics</p>
+                </div>
+
+                <div id="metricsPanel" class="metrics-panel" style="display: none;">
+                    <!-- Device Header -->
+                    <div class="device-header">
+                        <div>
+                            <h2 id="deviceName">Device Name</h2>
+                            <p id="deviceIP" class="device-ip">100.x.y.z</p>
+                        </div>
+                        <div class="status-badge" id="deviceStatus">
+                            <span class="status-dot"></span>
+                            <span>Online</span>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div class="metrics-grid">
+                        <!-- CPU Card -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">💻</span>
+                                <h3>CPU</h3>
+                            </div>
+                            <div class="metric-value" id="cpuUsage">--%</div>
+                            <div class="metric-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Cores:</span>
+                                    <span id="cpuCores">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Load Avg:</span>
+                                    <span id="cpuLoad">--, --, --</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Memory Card -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🧠</span>
+                                <h3>Memory</h3>
+                            </div>
+                            <div class="metric-value" id="memUsage">--%</div>
+                            <div class="metric-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">Used:</span>
+                                    <span id="memUsed">-- / --</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Swap:</span>
+                                    <span id="memSwap">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Disk Card -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">💾</span>
+                                <h3>Disk</h3>
+                            </div>
+                            <div id="diskMetrics" class="disk-metrics">
+                                <div class="loading-small">Loading...</div>
+                            </div>
+                        </div>
+
+                        <!-- Network Card -->
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <span class="metric-icon">🌐</span>
+                                <h3>Network</h3>
+                            </div>
+                            <div class="metric-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">↓ Received:</span>
+                                    <span id="netRecv">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">↑ Sent:</span>
+                                    <span id="netSent">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Card -->
+                        <div class="metric-card metric-card-wide">
+                            <div class="metric-header">
+                                <span class="metric-icon">⚙️</span>
+                                <h3>System Info</h3>
+                            </div>
+                            <div class="metric-details">
+                                <div class="detail-item">
+                                    <span class="detail-label">OS:</span>
+                                    <span id="sysOS">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Uptime:</span>
+                                    <span id="sysUptime">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Kernel:</span>
+                                    <span id="sysKernel">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="errorMessage" class="error-message" style="display: none;">
+                        <span class="error-icon">⚠️</span>
+                        <span id="errorText">Failed to load metrics</span>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -4,6 +4,37 @@
 
 Todos os endpoints estão disponíveis apenas via rede Tailscale (100.x.y.z).
 
+### GET /static/
+
+Serve a interface web do dashboard.
+
+**Acesso:** Abra no navegador `http://100.x.y.z:8080/static/`
+
+### GET /api/peers
+
+Retorna lista de peers Tailscale com status online/offline.
+
+**Resposta:**
+```json
+[
+  {
+    "hostname": "sleipnir",
+    "ip": "100.117.120.13",
+    "online": true
+  },
+  {
+    "hostname": "niflheim",
+    "ip": "100.124.253.7",
+    "online": true
+  },
+  {
+    "hostname": "hermod",
+    "ip": "100.98.38.44",
+    "online": false
+  }
+]
+```
+
 ### GET /status
 
 Retorna as métricas atuais do sistema.

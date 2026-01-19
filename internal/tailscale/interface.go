@@ -1,10 +1,14 @@
 package tailscale
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // GetTailscaleIP retorna o IP Tailscale local (100.x.y.z)
@@ -54,23 +58,131 @@ func GetTailscaleIP() (string, error) {
 
 // PeerInfo representa informações de um peer Tailscale
 type PeerInfo struct {
-	Hostname string
-	IP       string
-	Online   bool
+	Hostname string `json:"hostname"`
+	IP       string `json:"ip"`
+	Online   bool   `json:"online"`
 }
 
-// GetPeers retorna lista de peers Tailscale
-func GetPeers() ([]PeerInfo, error) {
-	cmd := exec.Command("tailscale", "status", "--json")
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tailscale status: %w", err)
+// APIClient cliente para API do Tailscale
+type APIClient struct {
+	apiKey  string
+	tailnet string
+	client  *http.Client
+}
+
+// NewAPIClient cria um novo cliente da API Tailscale
+func NewAPIClient(apiKey, tailnet string) *APIClient {
+	return &APIClient{
+		apiKey:  apiKey,
+		tailnet: tailnet,
+		client: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
+}
+
+// tailscaleDevice representa um dispositivo da API do Tailscale
+type tailscaleDevice struct {
+	Name      string   `json:"name"`
+	Hostname  string   `json:"hostname"`
+	Addresses []string `json:"addresses"`
+	Online    bool     `json:"online"`
+}
+
+// tailscaleDevicesResponse resposta da API de devices
+type tailscaleDevicesResponse struct {
+	Devices []tailscaleDevice `json:"devices"`
+}
+
+// GetPeersViaAPI busca peers usando a API do Tailscale
+func (c *APIClient) GetPeersViaAPI() ([]PeerInfo, error) {
+	if c.apiKey == "" || c.tailnet == "" {
+		return nil, fmt.Errorf("tailscale API key and tailnet are required")
 	}
 
-	// Parse simples do JSON (poderia usar encoding/json para mais robustez)
-	// Por simplicidade, vamos usar o formato texto
-	cmd = exec.Command("tailscale", "status")
-	output, err = cmd.Output()
+	url := fmt.Sprintf("https://api.tailscale.com/api/v2/tailnet/%s/devices", c.tailnet)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var devicesResp tailscaleDevicesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&devicesResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	var peers []PeerInfo
+	for _, device := range devicesResp.Devices {
+		// Pega o primeiro endereço IPv4 Tailscale
+		var ip string
+		for _, addr := range device.Addresses {
+			if strings.HasPrefix(addr, "100.") {
+				// Remove CIDR notation se presente
+				ip = strings.Split(addr, "/")[0]
+				break
+			}
+		}
+
+		if ip == "" {
+			continue
+		}
+
+		hostname := device.Hostname
+		if hostname == "" {
+			hostname = device.Name
+		}
+
+		peers = append(peers, PeerInfo{
+			Hostname: hostname,
+			IP:       ip,
+			Online:   device.Online,
+		})
+	}
+
+	return peers, nil
+}
+
+// GetPeers retorna lista de peers Tailscale (tenta CLI primeiro, depois API)
+func GetPeers() ([]PeerInfo, error) {
+	// Tenta via CLI primeiro
+	peers, err := getPeersViaCLI()
+	if err == nil && len(peers) > 0 {
+		return peers, nil
+	}
+
+	// Se CLI falhar, retorna erro indicando que API é necessária
+	return nil, fmt.Errorf("failed to get tailscale status: %w (hint: configure TAILSCALE_API_KEY and TAILSCALE_TAILNET environment variables)", err)
+}
+
+// GetPeersWithAPI retorna peers usando API ou CLI baseado na config
+func GetPeersWithAPI(apiKey, tailnet string, useCLI bool) ([]PeerInfo, error) {
+	if !useCLI && apiKey != "" && tailnet != "" {
+		client := NewAPIClient(apiKey, tailnet)
+		return client.GetPeersViaAPI()
+	}
+
+	// Fallback para CLI
+	return getPeersViaCLI()
+}
+
+// getPeersViaCLI busca peers via comando tailscale
+func getPeersViaCLI() ([]PeerInfo, error) {
+	cmd := exec.Command("tailscale", "status")
+	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tailscale status: %w", err)
 	}

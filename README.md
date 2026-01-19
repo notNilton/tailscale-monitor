@@ -18,6 +18,85 @@ Sistema minimalista e descentralizado de monitoramento para redes Tailscale. Cad
 - **Rede**: Bytes enviados/recebidos, interfaces ativas
 - **Sistema**: Uptime, hostname, OS, versão do kernel
 
+## 🌐 Web Dashboard
+
+Cada agente serve uma **interface web moderna** que permite navegar entre todos os dispositivos da rede Tailscale de forma peer-to-peer.
+
+### Acessar o Dashboard
+
+Abra seu navegador e acesse qualquer dispositivo da rede:
+
+```
+http://100.x.y.z:8080/static/
+```
+
+### Funcionalidades
+
+- 📋 **Lista de Dispositivos**: Visualize todos os peers Tailscale com status online/offline
+- 🔍 **Busca**: Filtre dispositivos por hostname ou IP
+- 📊 **Métricas em Tempo Real**: CPU, memória, disco, rede e sistema
+- 🎨 **Design Moderno**: Interface glassmorphism com dark mode
+- 📱 **Responsivo**: Funciona perfeitamente em desktop, tablet e mobile
+- 🔄 **Auto-refresh**: Atualização automática a cada 30 segundos
+- 🌐 **Peer-to-Peer**: Requisições diretas entre dispositivos (sem servidor central)
+
+### Como Usar
+
+1. Acesse o dashboard em qualquer dispositivo: `http://100.x.y.z:8080/static/`
+2. Veja a lista de dispositivos na barra lateral
+3. Clique em um dispositivo para visualizar suas métricas
+4. As métricas são atualizadas automaticamente
+
+## 🔑 Configuração da API Tailscale
+
+Para que o dashboard possa listar os dispositivos da sua rede, você precisa configurar as credenciais da API do Tailscale.
+
+### Passo 1: Obter API Key
+
+1. Acesse [Tailscale Admin Console](https://login.tailscale.com/admin/settings/keys)
+2. Clique em **Generate API key**
+3. Dê um nome descritivo (ex: "Network Monitor")
+4. Copie a chave gerada (começa com `tskey-api-`)
+
+### Passo 2: Identificar seu Tailnet
+
+Seu tailnet é o domínio da sua rede Tailscale. Exemplos:
+- `example.com`
+- `example.ts.net`
+- `user@example.com`
+
+Você pode encontrá-lo em [General Settings](https://login.tailscale.com/admin/settings/general).
+
+### Passo 3: Configurar Variáveis de Ambiente
+
+**Docker:**
+```bash
+# Crie um arquivo .env
+cp .env.example .env
+
+# Edite e adicione suas credenciais
+TAILSCALE_API_KEY=tskey-api-xxxxx
+TAILSCALE_TAILNET=example.ts.net
+```
+
+**Systemd:**
+```bash
+# Edite o arquivo de serviço
+sudo systemctl edit tailscale-monitor
+
+# Adicione:
+[Service]
+Environment="TAILSCALE_API_KEY=tskey-api-xxxxx"
+Environment="TAILSCALE_TAILNET=example.ts.net"
+```
+
+**Manual:**
+```bash
+export TAILSCALE_API_KEY=tskey-api-xxxxx
+export TAILSCALE_TAILNET=example.ts.net
+./bin/agent
+```
+
 ## 🚀 Instalação
 
 ### Opção 1: Docker (Recomendado)

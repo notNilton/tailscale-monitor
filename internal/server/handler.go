@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/nilbyte-studios/network-infra/internal/config"
 	"github.com/nilbyte-studios/network-infra/internal/metrics"
 	"github.com/nilbyte-studios/network-infra/internal/storage"
 	"github.com/nilbyte-studios/network-infra/internal/tailscale"
@@ -16,13 +17,15 @@ import (
 type Handler struct {
 	collector *metrics.Collector
 	storage   *storage.Storage
+	config    *config.Config
 }
 
 // NewHandler cria um novo handler
-func NewHandler(collector *metrics.Collector, storage *storage.Storage) *Handler {
+func NewHandler(collector *metrics.Collector, storage *storage.Storage, cfg *config.Config) *Handler {
 	return &Handler{
 		collector: collector,
 		storage:   storage,
+		config:    cfg,
 	}
 }
 
@@ -62,6 +65,31 @@ func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// HandlePeers retorna lista de peers Tailscale
+func (h *Handler) HandlePeers(w http.ResponseWriter, r *http.Request) {
+	// Verifica se a requisição vem da rede Tailscale
+	remoteIP := getRemoteIP(r)
+	if !tailscale.IsTailscaleIP(remoteIP) {
+		http.Error(w, "Forbidden: Only Tailscale network allowed", http.StatusForbidden)
+		return
+	}
+
+	// Busca peers usando API ou CLI
+	peers, err := tailscale.GetPeersWithAPI(
+		h.config.Tailscale.APIKey,
+		h.config.Tailscale.Tailnet,
+		h.config.Tailscale.UseCLI,
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get peers: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Retorna JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(peers)
 }
 
 // HandleHistory retorna histórico de métricas
