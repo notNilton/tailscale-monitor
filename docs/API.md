@@ -1,20 +1,22 @@
 # API Documentation
 
+HTTP API exposed by the monitoring agent.
+
 ## Endpoints
 
-Todos os endpoints estão disponíveis apenas via rede Tailscale (100.x.y.z).
+All endpoints are only available via Tailscale network (100.x.y.z).
 
 ### GET /static/
 
-Serve a interface web do dashboard.
+Serves the web dashboard interface.
 
-**Acesso:** Abra no navegador `http://100.x.y.z:8080/static/`
+**Access:** Open in browser `http://100.x.y.z:8080/static/`
 
 ### GET /api/peers
 
-Retorna lista de peers Tailscale com status online/offline.
+Returns list of Tailscale peers with online/offline status.
 
-**Resposta:**
+**Response:**
 ```json
 [
   {
@@ -37,125 +39,202 @@ Retorna lista de peers Tailscale com status online/offline.
 
 ### GET /status
 
-Retorna as métricas atuais do sistema.
+Returns current system metrics.
 
-**Resposta:**
+**Response:**
 ```json
 {
-  "timestamp": "2026-01-18T21:45:00-04:00",
-  "hostname": "server-prod",
+  "timestamp": "2026-01-19T02:04:19Z",
+  "hostname": "sleipnir",
   "cpu": {
-    "usage_percent": 23.45,
-    "load_average": [1.20, 1.15, 1.10],
-    "cores": 4
+    "usage_percent": 17.72,
+    "load_average": [0.41, 0.84, 1.03],
+    "cores": 8
   },
   "memory": {
-    "total_bytes": 8589934592,
-    "used_bytes": 3435973836,
-    "available_bytes": 5153960756,
-    "usage_percent": 40.0,
-    "swap_total_bytes": 2147483648,
+    "total_bytes": 36567764992,
+    "used_bytes": 10795655168,
+    "available_bytes": 25958637568,
+    "usage_percent": 29.52,
+    "swap_total_bytes": 8589930496,
     "swap_used_bytes": 0
   },
   "disk": [
     {
-      "device": "/dev/sda1",
+      "device": "/dev/nvme1n1p2",
       "mount_point": "/",
-      "total_bytes": 107374182400,
-      "used_bytes": 48547348480,
-      "free_bytes": 58826833920,
-      "usage_percent": 45.2
+      "total_bytes": 485923799040,
+      "used_bytes": 103049240576,
+      "free_bytes": 358115794944,
+      "usage_percent": 22.35
     }
   ],
   "network": {
-    "bytes_sent": 483183820800,
-    "bytes_recv": 1319413953331,
-    "packets_sent": 1234567,
-    "packets_recv": 2345678,
+    "bytes_sent": 1832973757,
+    "bytes_recv": 2056563938,
+    "packets_sent": 403355,
+    "packets_recv": 689509,
     "interfaces": [
       {
         "name": "tailscale0",
-        "addresses": ["100.64.1.10"],
+        "addresses": ["100.117.120.13/32"],
         "is_up": true
       }
     ]
   },
   "system": {
     "os": "linux",
-    "platform": "ubuntu",
-    "platform_version": "22.04",
-    "kernel_version": "5.15.0-91-generic",
-    "uptime_seconds": 1314120
+    "platform": "alpine",
+    "platform_version": "3.23.2",
+    "kernel_version": "6.14.0-37-generic",
+    "uptime_seconds": 5705
   }
 }
 ```
 
 ### GET /health
 
-Health check simples.
+Returns service health status.
 
-**Resposta:**
+**Response:**
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-01-18T21:45:00-04:00"
+  "timestamp": "2026-01-19T02:04:19Z"
 }
 ```
 
 ### GET /metrics/history
 
-Retorna histórico de métricas.
+Returns metrics history.
 
 **Query Parameters:**
-- `hours` (opcional): Número de horas de histórico (padrão: 24)
+- `hours` (optional): Number of hours of history (default: 24)
 
-**Exemplo:**
+**Example:**
 ```bash
-curl http://100.64.1.10:8080/metrics/history?hours=48
+curl http://100.117.120.13:8080/metrics/history?hours=6
 ```
 
-**Resposta:**
+**Response:**
 ```json
 {
-  "hours": 48,
-  "count": 5760,
+  "hours": 6,
+  "count": 720,
   "metrics": [
     {
-      "timestamp": "2026-01-18T21:45:00-04:00",
-      "hostname": "server-prod",
+      "timestamp": "2026-01-19T02:04:19Z",
+      "hostname": "sleipnir",
       "cpu": { ... },
       "memory": { ... },
       "disk": [ ... ],
       "network": { ... },
       "system": { ... }
-    },
-    ...
+    }
   ]
 }
 ```
 
-## Segurança
+## Security
 
-Todos os endpoints (exceto `/health`) validam que a requisição vem da rede Tailscale (100.64.0.0/10). Requisições de outros IPs retornam `403 Forbidden`.
+### Network Restriction
 
-## Exemplos com curl
+All endpoints validate that requests come from the Tailscale network (100.64.0.0/10).
 
-```bash
-# Status atual
-curl http://100.64.1.10:8080/status | jq
-
-# Health check
-curl http://100.64.1.10:8080/health
-
-# Histórico das últimas 12 horas
-curl http://100.64.1.10:8080/metrics/history?hours=12 | jq
-
-# Apenas CPU usage do histórico
-curl http://100.64.1.10:8080/metrics/history?hours=1 | jq '.metrics[].cpu.usage_percent'
+Requests from outside the Tailscale network receive:
+```
+HTTP/1.1 403 Forbidden
+Forbidden: Only Tailscale network allowed
 ```
 
-## Códigos de Status HTTP
+### CORS Headers
 
-- `200 OK`: Requisição bem-sucedida
-- `403 Forbidden`: IP não é da rede Tailscale
-- `500 Internal Server Error`: Erro ao coletar métricas
+All endpoints include CORS headers to allow cross-origin requests within the Tailscale network:
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+```
+
+## Error Responses
+
+### 403 Forbidden
+Request from outside Tailscale network.
+
+### 500 Internal Server Error
+Error collecting metrics or querying database.
+
+**Example:**
+```json
+{
+  "error": "Failed to collect metrics: ..."
+}
+```
+
+## Usage Examples
+
+### Get Current Metrics
+```bash
+curl http://100.117.120.13:8080/status | jq '.cpu.usage_percent'
+```
+
+### Get Device List
+```bash
+curl http://100.117.120.13:8080/api/peers | jq '.[] | select(.online==true)'
+```
+
+### Get 24h History
+```bash
+curl http://100.117.120.13:8080/metrics/history?hours=24 | jq '.count'
+```
+
+### Health Check
+```bash
+curl http://100.117.120.13:8080/health
+```
+
+## Integration
+
+### Prometheus
+
+You can create a Prometheus exporter using the `/status` endpoint:
+
+```yaml
+scrape_configs:
+  - job_name: 'tailscale-monitor'
+    static_configs:
+      - targets: ['100.117.120.13:8080']
+    metrics_path: '/status'
+```
+
+### Grafana
+
+Create a JSON datasource pointing to the `/metrics/history` endpoint for historical data visualization.
+
+### Custom Scripts
+
+```python
+import requests
+
+def get_cpu_usage(ip):
+    response = requests.get(f'http://{ip}:8080/status')
+    data = response.json()
+    return data['cpu']['usage_percent']
+
+# Get CPU usage from all online devices
+peers = requests.get('http://100.117.120.13:8080/api/peers').json()
+for peer in peers:
+    if peer['online']:
+        cpu = get_cpu_usage(peer['ip'])
+        print(f"{peer['hostname']}: {cpu}%")
+```
+
+## Rate Limiting
+
+Currently, there is no rate limiting. The agent can handle multiple concurrent requests.
+
+## Versioning
+
+The API follows semantic versioning. Current version: `v1.0.0`
+
+Breaking changes will be announced in advance and will increment the major version.

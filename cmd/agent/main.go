@@ -20,21 +20,21 @@ import (
 func main() {
 	log.Println("Starting Tailscale Network Monitor Agent...")
 
-	// Carrega configuração
+	// Load configuration
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 	log.Printf("Using configuration from: config.yaml (or defaults if not found)")
 
-	// Detecta IP Tailscale
+	// Detect Tailscale IP
 	tailscaleIP, err := tailscale.GetTailscaleIP()
 	if err != nil {
 		log.Fatalf("Failed to get Tailscale IP: %v", err)
 	}
 	log.Printf("Tailscale IP detected: %s", tailscaleIP)
 
-	// Inicializa storage
+	// Initialize storage
 	store, err := storage.NewStorage(cfg.Storage.Path)
 	if err != nil {
 		log.Fatalf("Failed to initialize storage: %v", err)
@@ -42,19 +42,19 @@ func main() {
 	defer store.Close()
 	log.Printf("Storage initialized: %s", cfg.Storage.Path)
 
-	// Inicializa coletor de métricas
+	// Initialize metrics collector
 	collector, err := metrics.NewCollector()
 	if err != nil {
 		log.Fatalf("Failed to initialize metrics collector: %v", err)
 	}
 
-	// Inicia coleta periódica de métricas em background
+	// Start periodic metrics collection in background
 	go periodicCollection(collector, store, cfg.Metrics.CollectionInterval)
 
-	// Inicia limpeza periódica de dados antigos
+	// Start periodic cleanup of old data
 	go periodicCleanup(store, cfg.Storage.RetentionDays)
 
-	// Configura HTTP server
+	// Configure HTTP server
 	handler := server.NewHandler(collector, store, cfg)
 	mux := http.NewServeMux()
 
@@ -68,7 +68,7 @@ func main() {
 	mux.Handle("/", http.RedirectHandler("/static/", http.StatusMovedPermanently))
 	mux.Handle("/static/", http.StripPrefix("/static", server.ServeStatic()))
 
-	// Determina endereço de bind
+	// Determine bind address
 	var addr string
 	if cfg.Server.TailscaleOnly {
 		addr = fmt.Sprintf("%s:%d", tailscaleIP, cfg.Server.Port)
@@ -83,7 +83,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	// Inicia servidor em goroutine
+	// Start server in goroutine
 	go func() {
 		log.Printf("HTTP server listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -91,14 +91,14 @@ func main() {
 		}
 	}()
 
-	// Aguarda sinal de shutdown
+	// Wait for shutdown signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
 	log.Println("Shutting down gracefully...")
 
-	// Shutdown graceful do servidor HTTP
+	// Graceful shutdown of HTTP server
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -109,7 +109,7 @@ func main() {
 	log.Println("Agent stopped")
 }
 
-// periodicCollection coleta métricas periodicamente
+// periodicCollection collects metrics periodically
 func periodicCollection(collector *metrics.Collector, store *storage.Storage, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -127,7 +127,7 @@ func periodicCollection(collector *metrics.Collector, store *storage.Storage, in
 	}
 }
 
-// periodicCleanup limpa dados antigos periodicamente
+// periodicCleanup cleans up old data periodically
 func periodicCleanup(store *storage.Storage, retentionDays int) {
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()

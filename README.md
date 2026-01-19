@@ -1,90 +1,93 @@
 # Tailscale Network Monitor
 
-Sistema minimalista e descentralizado de monitoramento para redes Tailscale. Cada dispositivo expõe suas próprias métricas via HTTP (apenas na interface Tailscale) e mantém histórico local em SQLite.
+A decentralized monitoring system for Tailscale networks built in Go. Each device exposes its metrics via a lightweight HTTP server and stores historical data locally in SQLite.
 
-## 🎯 Características
+## ✨ Features
 
-- **Descentralizado**: Sem servidor central, cada nó é autônomo
-- **Seguro**: Escuta apenas na interface Tailscale (100.x.y.z)
-- **Leve**: Binário único em Go, baixo consumo de recursos
-- **Persistente**: Histórico local em SQLite
-- **Simples**: CLI intuitivo para consultar qualquer nó
+- 🔒 **Secure**: Runs only on Tailscale interface (100.x.y.z)
+- 📊 **Complete Metrics**: CPU, Memory, Disk, Network, System Info
+- 💾 **Local Storage**: SQLite with automatic cleanup
+- 🌐 **Web Dashboard**: Modern brutalist UI for monitoring
+- 🔍 **Peer Discovery**: Automatic detection of Tailscale devices
+- 🎯 **Peer-to-Peer**: Direct communication between devices
+- 🐳 **Docker Ready**: Easy deployment with Docker Compose
+- 📱 **Responsive**: Works on desktop, tablet, and mobile
 
-## 📊 Métricas Coletadas
+## 📊 Collected Metrics
 
-- **CPU**: Uso percentual, load average, número de cores
-- **Memória**: Total, usado, disponível, swap
-- **Disco**: Uso por partição, I/O
-- **Rede**: Bytes enviados/recebidos, interfaces ativas
-- **Sistema**: Uptime, hostname, OS, versão do kernel
+- **CPU**: Usage percentage, load average, number of cores
+- **Memory**: Total, used, available, swap
+- **Disk**: Usage per partition, I/O
+- **Network**: Bytes sent/received, active interfaces
+- **System**: Uptime, hostname, OS, kernel version
 
 ## 🌐 Web Dashboard
 
-Cada agente serve uma **interface web moderna** que permite navegar entre todos os dispositivos da rede Tailscale de forma peer-to-peer.
+Each agent serves a **modern web interface** that allows peer-to-peer navigation between all Tailscale network devices.
 
-### Acessar o Dashboard
+### Access the Dashboard
 
-Abra seu navegador e acesse qualquer dispositivo da rede:
+Open your browser and access any device on the network:
 
 ```
 http://100.x.y.z:8080/static/
 ```
 
-### Funcionalidades
+### Features
 
-- 📋 **Lista de Dispositivos**: Visualize todos os peers Tailscale com status online/offline
-- 🔍 **Busca**: Filtre dispositivos por hostname ou IP
-- 📊 **Métricas em Tempo Real**: CPU, memória, disco, rede e sistema
-- 🎨 **Design Moderno**: Interface glassmorphism com dark mode
-- 📱 **Responsivo**: Funciona perfeitamente em desktop, tablet e mobile
-- 🔄 **Auto-refresh**: Atualização automática a cada 30 segundos
-- 🌐 **Peer-to-Peer**: Requisições diretas entre dispositivos (sem servidor central)
+- 📋 **Device List**: View all Tailscale peers with online/offline status
+- 🔍 **Search**: Filter devices by hostname or IP
+- 📊 **Real-time Metrics**: CPU, memory, disk, network, and system
+- 🎨 **Modern Design**: Brutalist interface with clean aesthetics
+- 📱 **Responsive**: Works perfectly on desktop, tablet, and mobile
+- 🔄 **Auto-refresh**: Automatic updates every 30 seconds
+- 🌐 **Peer-to-Peer**: Direct requests between devices (no central server)
 
-### Como Usar
+### How to Use
 
-1. Acesse o dashboard em qualquer dispositivo: `http://100.x.y.z:8080/static/`
-2. Veja a lista de dispositivos na barra lateral
-3. Clique em um dispositivo para visualizar suas métricas
-4. As métricas são atualizadas automaticamente
+1. Access the dashboard on any device: `http://100.x.y.z:8080/static/`
+2. See the device list in the sidebar
+3. Click on a device to view its metrics
+4. Metrics are automatically updated
 
-## 🔑 Configuração da API Tailscale
+## 🔑 Tailscale API Configuration
 
-Para que o dashboard possa listar os dispositivos da sua rede, você precisa configurar as credenciais da API do Tailscale.
+For the dashboard to list devices on your network, you need to configure Tailscale API credentials.
 
-### Passo 1: Obter API Key
+### Step 1: Get API Key
 
-1. Acesse [Tailscale Admin Console](https://login.tailscale.com/admin/settings/keys)
-2. Clique em **Generate API key**
-3. Dê um nome descritivo (ex: "Network Monitor")
-4. Copie a chave gerada (começa com `tskey-api-`)
+1. Access [Tailscale Admin Console](https://login.tailscale.com/admin/settings/keys)
+2. Click **Generate API key**
+3. Give it a descriptive name (e.g., "Network Monitor")
+4. Copy the generated key (starts with `tskey-api-`)
 
-### Passo 2: Identificar seu Tailnet
+### Step 2: Identify your Tailnet
 
-Seu tailnet é o domínio da sua rede Tailscale. Exemplos:
+Your tailnet is your Tailscale network domain. Examples:
 - `example.com`
 - `example.ts.net`
 - `user@example.com`
 
-Você pode encontrá-lo em [General Settings](https://login.tailscale.com/admin/settings/general).
+You can find it at [General Settings](https://login.tailscale.com/admin/settings/general).
 
-### Passo 3: Configurar Variáveis de Ambiente
+### Step 3: Configure Environment Variables
 
 **Docker:**
 ```bash
-# Crie um arquivo .env
+# Create a .env file
 cp .env.example .env
 
-# Edite e adicione suas credenciais
+# Edit and add your credentials
 TAILSCALE_API_KEY=tskey-api-xxxxx
 TAILSCALE_TAILNET=example.ts.net
 ```
 
 **Systemd:**
 ```bash
-# Edite o arquivo de serviço
+# Edit the service file
 sudo systemctl edit tailscale-monitor
 
-# Adicione:
+# Add:
 [Service]
 Environment="TAILSCALE_API_KEY=tskey-api-xxxxx"
 Environment="TAILSCALE_TAILNET=example.ts.net"
@@ -97,235 +100,188 @@ export TAILSCALE_TAILNET=example.ts.net
 ./bin/agent
 ```
 
-## 🚀 Instalação
+## 🚀 Installation
 
-### Opção 1: Docker (Recomendado)
+### Option 1: Docker (Recommended)
 
 ```bash
-# Clone o repositório
-git clone https://github.com/nilbyte-studios/network-infra.git
+# Clone the repository
+git clone https://github.com/your-user/network-infra
 cd network-infra
 
-# Crie o arquivo de configuração
-cp config.example.yaml config.yaml
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your Tailscale API credentials
 
-# Inicie com Docker Compose
-docker-compose up -d
+# Start with Docker Compose
+docker compose up -d
+
+# View logs
+docker compose logs -f
 ```
 
-### Opção 2: Binário (Linux)
+### Option 2: Binary
 
 ```bash
-# Clone o repositório
-git clone https://github.com/nilbyte-studios/network-infra.git
-cd network-infra
-
-# Execute o script de instalação
-sudo ./scripts/install.sh
-
-# Inicie o serviço
-sudo systemctl start tailscale-monitor
-sudo systemctl enable tailscale-monitor
-```
-
-### Opção 3: Build Manual
-
-```bash
-# Clone o repositório
-git clone https://github.com/nilbyte-studios/network-infra.git
-cd network-infra
-
-# Instale dependências
-go mod download
-
 # Build
 go build -o bin/agent ./cmd/agent
 go build -o bin/client ./cmd/client
 
-# Execute
+# Run agent
 ./bin/agent
+
+# Use client
+./bin/client list
+./bin/client status <hostname>
 ```
 
-## 📖 Uso
-
-### Cliente CLI
-
-Após a instalação, use o comando `tsmon` (ou `./bin/client` se build manual):
+### Option 3: Systemd (Linux)
 
 ```bash
-# Listar todos os peers Tailscale
+# Run installation script
+sudo ./scripts/install.sh
+
+# Check status
+sudo systemctl status tailscale-monitor
+
+# View logs
+sudo journalctl -u tailscale-monitor -f
+```
+
+## 📖 Usage
+
+### Web Dashboard
+
+Access the web interface:
+```bash
+http://100.117.120.13:8080/static/
+```
+
+Features:
+- View all Tailscale devices
+- Click on any device with monitor running (green)
+- See real-time metrics
+- Auto-refresh every 30 seconds
+
+### CLI Client
+
+```bash
+# List all peers
 tsmon list
 
-# Consultar status de um peer específico
-tsmon status hostname-do-peer
+# Query specific peer
+tsmon status sleipnir
 
-# Consultar todos os peers online
+# Query all online peers
 tsmon status --all
 
-# Output em JSON
-tsmon status hostname-do-peer --json
+# JSON output
+tsmon status sleipnir --json
 ```
 
-### API HTTP
-
-Cada nó expõe os seguintes endpoints (apenas acessíveis via Tailscale):
+### HTTP API
 
 ```bash
-# Status atual (métricas em tempo real)
-curl http://100.x.y.z:8080/status
+# Current metrics
+curl http://100.117.120.13:8080/status
+
+# Device list
+curl http://100.117.120.13:8080/api/peers
+
+# Metrics history
+curl http://100.117.120.13:8080/metrics/history?hours=24
 
 # Health check
-curl http://100.x.y.z:8080/health
-
-# Histórico (últimas 24 horas por padrão)
-curl http://100.x.y.z:8080/metrics/history
-
-# Histórico personalizado (últimas 48 horas)
-curl http://100.x.y.z:8080/metrics/history?hours=48
+curl http://100.117.120.13:8080/health
 ```
 
-## ⚙️ Configuração
+## ⚙️ Configuration
 
-Edite `config.yaml`:
+Create a `config.yaml` file:
 
 ```yaml
 server:
-  port: 8080                # Porta do servidor HTTP
-  tailscale_only: true      # Escutar apenas no IP Tailscale
+  port: 8080
+  tailscale_only: true
 
 storage:
-  path: /data/metrics.db    # Caminho do banco SQLite
-  retention_days: 30        # Retenção de dados (dias)
+  path: /data/metrics.db
+  retention_days: 30
 
 metrics:
-  collection_interval: 30s  # Intervalo de coleta
+  collection_interval: 30s
+
+tailscale:
+  api_key: ""  # or use TAILSCALE_API_KEY env var
+  tailnet: ""  # or use TAILSCALE_TAILNET env var
+  use_cli: false  # true to use CLI, false to use API
 ```
 
-## 🔒 Segurança
-
-- **Binding Tailscale**: O servidor escuta apenas no IP Tailscale (100.x.y.z), garantindo que apenas dispositivos na VPN possam acessar
-- **Validação de IP**: Todos os endpoints validam que a requisição vem da rede Tailscale
-- **Sem autenticação externa**: A segurança é garantida pela própria rede Tailscale
-
-## 🏗️ Arquitetura
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│         Dispositivo A (100.x.y.1)       │
-│  ┌────────────┐  ┌──────────────────┐   │
-│  │  Collector │→ │  HTTP Server     │   │
-│  └────────────┘  │  :8080           │   │
-│                  └──────────────────┘   │
-│                  ┌──────────────────┐   │
-│                  │  SQLite DB       │   │
-│                  └──────────────────┘   │
-└─────────────────────────────────────────┘
-                     ↑
-                     │ HTTP GET /status
-                     │
-┌─────────────────────────────────────────┐
-│         Admin (100.x.y.3)               │
-│  ┌────────────────────────────────────┐ │
-│  │  Cliente CLI (tsmon)               │ │
-│  │  - Descobre peers via tailscale   │ │
-│  │  - Consulta diretamente cada nó   │ │
-│  └────────────────────────────────────┘ │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                 Tailscale Network                   │
+│                  (100.x.y.z/10)                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    │
+│  │ Device 1 │    │ Device 2 │    │ Device 3 │    │
+│  │          │    │          │    │          │    │
+│  │  Agent   │◄──►│  Agent   │◄──►│  Agent   │    │
+│  │  :8080   │    │  :8080   │    │  :8080   │    │
+│  │          │    │          │    │          │    │
+│  │ SQLite   │    │ SQLite   │    │ SQLite   │    │
+│  └──────────┘    └──────────┘    └──────────┘    │
+│                                                     │
+└─────────────────────────────────────────────────────┘
 ```
 
-## 📁 Estrutura do Projeto
+**Key Components:**
+- **Agent**: HTTP server + metrics collector + SQLite storage
+- **Client**: CLI for querying peers
+- **Web Dashboard**: Browser interface for monitoring
+- **Tailscale**: Secure network layer
 
-```
-.
-├── cmd/
-│   ├── agent/          # Agente de monitoramento
-│   └── client/         # Cliente CLI
-├── internal/
-│   ├── config/         # Configuração
-│   ├── metrics/        # Coleta de métricas
-│   ├── server/         # Servidor HTTP
-│   ├── storage/        # Persistência SQLite
-│   └── tailscale/      # Integração Tailscale
-├── scripts/
-│   └── install.sh      # Script de instalação
-├── Dockerfile
-├── docker-compose.yml
-└── config.example.yaml
-```
+## 🔒 Security
 
-## 🛠️ Desenvolvimento
+- ✅ Listens **only** on Tailscale interface (100.x.y.z)
+- ✅ Validates that requests come from Tailscale network
+- ✅ No public internet exposure
+- ✅ Encrypted communication via Tailscale (WireGuard)
+- ✅ No central server (decentralized)
+
+## 📚 Documentation
+
+- [API Documentation](docs/API.md)
+- [Installation Guide](scripts/install.sh)
+- [Configuration Examples](config.example.yaml)
+
+## 🛠️ Development
 
 ```bash
-# Instalar dependências
+# Install dependencies
 go mod download
 
-# Executar testes
-go test ./internal/...
+# Run tests
+go test ./...
 
 # Build
 go build -o bin/agent ./cmd/agent
 go build -o bin/client ./cmd/client
 
-# Executar localmente
+# Run locally
 ./bin/agent
 ```
 
-## 📝 Exemplos
+## 📝 License
 
-### Monitorar todos os dispositivos
+MIT License - see [LICENSE](LICENSE) file for details.
 
-```bash
-# Lista todos os peers
-tsmon list
+## 🤝 Contributing
 
-# Output:
-# HOSTNAME        IP              STATUS
-# --------        --              ------
-# server-prod     100.64.1.10     online
-# laptop-dev      100.64.1.20     online
-# raspberry-pi    100.64.1.30     offline
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Consultar status específico
+## 📧 Support
 
-```bash
-tsmon status server-prod
-
-# Output:
-# Hostname: server-prod
-# Timestamp: 2026-01-18T21:45:00-04:00
-# Uptime: 15d 3h 42m
-#
-# CPU Usage: 23.45%
-# CPU Cores: 4
-# Load Average: 1.20, 1.15, 1.10
-#
-# Memory: 3.2 GiB / 8.0 GiB (40.00%)
-# Swap: 0 B / 2.0 GiB
-#
-# Disk Usage:
-#   /: 45.2 GiB / 100.0 GiB (45.20%)
-#   /data: 120.5 GiB / 500.0 GiB (24.10%)
-#
-# Network: ↓ 1.2 TiB  ↑ 450.3 GiB
-```
-
-### Consultar histórico via API
-
-```bash
-curl http://100.64.1.10:8080/metrics/history?hours=1 | jq
-```
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests.
-
-## 📄 Licença
-
-MIT License - veja LICENSE para detalhes.
-
-## 🔗 Links Úteis
-
-- [Tailscale](https://tailscale.com/)
-- [Documentação Go](https://go.dev/doc/)
-- [gopsutil](https://github.com/shirou/gopsutil)
+For issues and questions, please open an issue on GitHub.
