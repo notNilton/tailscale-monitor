@@ -1,0 +1,133 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/nilbyte-studios/network-infra/internal/config"
+	"github.com/nilbyte-studios/network-infra/internal/metrics"
+	"github.com/nilbyte-studios/network-infra/internal/server"
+	"github.com/nilbyte-studios/network-infra/internal/storage"
+	"github.com/nilbyte-studios/network-infra/internal/tailscale"
+)
+
+func main() {
+	log.Println("Starting Tailscale Network Monitor Agent...")
+
+	// Carrega configuração
+	cfg, err := config.LoadConfig("config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+	log.Printf("Using configuration from: config.yaml (or defaults if not found)")
+
+	// Detecta IP Tailscale
+	tailscaleIP, err := tailscale.GetTailscaleIP()
+	if err != nil {
+		log.Fatalf("Failed to get Tailscale IP: %v", err)
+	}
+	log.Printf("Tailscale IP detected: %s", tailscaleIP)
+
+	// Inicializa storage
+	store, err := storage.NewStorage(cfg.Storage.Path)
+	if err != nil {
+		log.Fatalf("Failed to initialize storage: %v", err)
+	}
+	defer store.Close()
+	log.Printf("Storage initialized: %s", cfg.Storage.Path)
+
+	// Inicializa coletor de métricas
+	collector, err := metrics.NewCollector()
+	if err != nil {
+		log.Fatalf("Failed to initialize metrics collector: %v", err)
+	}
+
+	// Inicia coleta periódica de métricas em background
+	go periodicCollection(collector, store, cfg.Metrics.CollectionInterval)
+
+	// Inicia limpeza periódica de dados antigos
+	go periodicCleanup(store, cfg.Storage.RetentionDays)
+
+	// Configura HTTP server
+	handler := server.NewHandler(collector, store)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/status", handler.HandleStatus)
+	mux.HandleFunc("/health", handler.HandleHealth)
+	mux.HandleFunc("/metrics/history", handler.HandleHistory)
+
+	// Determina endereço de bind
+	var addr string
+	if cfg.Server.TailscaleOnly {
+		addr = fmt.Sprintf("%s:%d", tailscaleIP, cfg.Server.Port)
+	} else {
+		addr = fmt.Sprintf(":%d", cfg.Server.Port)
+	}
+
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	// Inicia servidor em goroutine
+	go func() {
+		log.Printf("HTTP server listening on %s", addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	// Aguarda sinal de shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	<-sigChan
+
+	log.Println("Shutting down gracefully...")
+
+	// Shutdown graceful do servidor HTTP
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
+	}
+
+	log.Println("Agent stopped")
+}
+
+// periodicCollection coleta métricas periodicamente
+func periodicCollection(collector *metrics.Collector, store *storage.Storage, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		m, err := collector.Collect()
+		if err != nil {
+			log.Printf("Error collecting metrics: %v", err)
+			continue
+		}
+
+		if err := store.Save(m); err != nil {
+			log.Printf("Error saving metrics: %v", err)
+		}
+	}
+}
+
+// periodicCleanup limpa dados antigos periodicamente
+func periodicCleanup(store *storage.Storage, retentionDays int) {
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if err := store.Cleanup(retentionDays); err != nil {
+			log.Printf("Error cleaning up old metrics: %v", err)
+		}
+	}
+}

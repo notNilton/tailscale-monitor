@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  agent:
+    build: .
+    image: tailscale-monitor:latest
+    container_name: tailscale-monitor-agent
+    network_mode: host # Necessário para acessar interface Tailscale
+    volumes:
+      - ./data:/data
+      # Para usar configuração customizada, crie config.yaml e descomente:
+      # - ./config.yaml:/app/config.yaml:ro
+    restart: unless-stopped
+    environment:
+      - TZ=America/Sao_Paulo

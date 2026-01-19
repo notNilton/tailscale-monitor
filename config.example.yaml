@@ -1,0 +1,10 @@
+server:
+  port: 8080
+  tailscale_only: true
+
+storage:
+  path: /data/metrics.db
+  retention_days: 30
+
+metrics:
+  collection_interval: 30s
