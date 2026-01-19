@@ -146,6 +146,11 @@ func (c *APIClient) GetPeersViaAPI() ([]PeerInfo, error) {
 			hostname = device.Name
 		}
 
+		// Skip localhost entries
+		if hostname == "localhost" {
+			continue
+		}
+
 		peers = append(peers, PeerInfo{
 			Hostname: hostname,
 			IP:       ip,

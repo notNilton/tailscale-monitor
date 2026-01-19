@@ -35,12 +35,37 @@ async function loadDevices() {
         if (!response.ok) throw new Error('Failed to fetch peers');
 
         devices = await response.json();
+
+        // Check health of each device
+        await checkDevicesHealth();
+
         renderDeviceList(devices);
-        updateDeviceCount(devices.length);
+        updateDeviceCount(devices.filter(d => d.available).length);
     } catch (error) {
         console.error('Error loading devices:', error);
         showError('Failed to load devices');
     }
+}
+
+// Check health of all devices
+async function checkDevicesHealth() {
+    const healthChecks = devices.map(async (device) => {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout
+
+            const response = await fetch(`http://${device.ip}:8080/health`, {
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+            device.available = response.ok;
+        } catch (error) {
+            device.available = false;
+        }
+    });
+
+    await Promise.all(healthChecks);
 }
 
 // Render device list
@@ -52,18 +77,26 @@ function renderDeviceList(deviceList) {
         return;
     }
 
-    container.innerHTML = deviceList.map(device => `
-        <div class="device-item ${device.online ? '' : 'offline'} ${currentDevice?.ip === device.ip ? 'active' : ''}" 
-             data-ip="${device.ip}" 
-             data-hostname="${device.hostname}"
-             onclick="selectDevice('${device.ip}', '${device.hostname}', ${device.online})">
-            <div class="device-item-header">
-                <span class="status-dot"></span>
-                <span class="device-item-name">${device.hostname}</span>
+    container.innerHTML = deviceList.map(device => {
+        const isAvailable = device.available === true;
+        const isActive = currentDevice?.ip === device.ip;
+        const clickHandler = isAvailable ? `onclick="selectDevice('${device.ip}', '${device.hostname}')"` : '';
+        const cursorStyle = isAvailable ? 'cursor: pointer;' : 'cursor: not-allowed; opacity: 0.5;';
+
+        return `
+            <div class="device-item ${!isAvailable ? 'offline' : ''} ${isActive ? 'active' : ''}" 
+                 data-ip="${device.ip}" 
+                 data-hostname="${device.hostname}"
+                 ${clickHandler}
+                 style="${cursorStyle}">
+                <div class="device-item-header">
+                    <span class="status-dot" style="background: ${isAvailable ? 'var(--success)' : 'var(--gray)'}"></span>
+                    <span class="device-item-name">${device.hostname}</span>
+                </div>
+                <div class="device-item-ip">${device.ip}</div>
             </div>
-            <div class="device-item-ip">${device.ip}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Filter devices
@@ -81,7 +114,7 @@ function updateDeviceCount(count) {
 }
 
 // Select device
-function selectDevice(ip, hostname, online) {
+function selectDevice(ip, hostname) {
     currentDevice = { ip, hostname };
 
     // Update UI
@@ -94,7 +127,7 @@ function selectDevice(ip, hostname, online) {
     document.getElementById('deviceName').textContent = hostname;
     document.getElementById('deviceIP').textContent = ip;
 
-    // Load metrics (will show error if device is actually offline)
+    // Load metrics
     loadMetrics(currentDevice);
 }
 
@@ -162,7 +195,7 @@ function renderDiskMetrics(disks) {
             <div class="disk-bar">
                 <div class="disk-bar-fill" style="width: ${disk.usage_percent}%"></div>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+            <div style="font-size: 0.85rem; color: var(--gray); margin-top: 4px;">
                 ${formatBytes(disk.used_bytes)} / ${formatBytes(disk.total_bytes)}
             </div>
         </div>
