@@ -82,11 +82,6 @@ function updateDeviceCount(count) {
 
 // Select device
 function selectDevice(ip, hostname, online) {
-    if (!online) {
-        showError(`Device ${hostname} is offline`);
-        return;
-    }
-
     currentDevice = { ip, hostname };
 
     // Update UI
@@ -99,7 +94,7 @@ function selectDevice(ip, hostname, online) {
     document.getElementById('deviceName').textContent = hostname;
     document.getElementById('deviceIP').textContent = ip;
 
-    // Load metrics
+    // Load metrics (will show error if device is actually offline)
     loadMetrics(currentDevice);
 }
 

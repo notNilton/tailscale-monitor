@@ -17,7 +17,7 @@ bin/
 *.db-shm
 *.db-wal
 
-# Config files with secrets
+# Config files with secrets que está pegando o status online da API do Tailscale. Vou corrigir isso permitindo que você clique mesmo em dispositivos "offline" e deixar a verificação de conectividade
 config.yaml
 
 # IDE
