@@ -74,3 +74,9 @@ TAILSCALE_TAILNET=example.ts.net
 | Status API | Backend | `8080` | http://100.x.y.z:8080/status |
 | Peer List API | Backend | `8080` | http://100.x.y.z:8080/api/peers |
 | Health Check | Backend | `8080` | http://100.x.y.z:8080/health |
+
+
+## Documentation
+
+- [📋 Roadmap & TODOs](docs/TODO.md) - Planned features and project roadmap
+- [📐 Architecture](docs/ARCHITECTURE.md) - System architecture and components
